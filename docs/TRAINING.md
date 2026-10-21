@@ -49,43 +49,67 @@ Model Fine-Tuning
 Evaluation
 ```
 
-## Data Preparation
+## Reconstructed Standalone Workflow
 
-The file [`prepare_data.py`](../prepare_data.py) provides the reconstructed data preparation workflow.
+The public [`prepare_data.py`](../prepare_data.py) and [`train.py`](../train.py) scripts now contain the workflow directly. They do not load or execute `notebooks/bert_original.ipynb`. The historical notebook remains an excluded source record; the standalone scripts are the executable 2026 reconstruction.
 
-Its operations include:
+### Required MySQL input
 
-- Loading article and author information from a separately provisioned database.
-- Filtering authors and article records.
-- Preparing training and evaluation subsets.
-- Encoding author identities as classification labels.
+The preparation query reads these tables:
 
-The implementation extracts SQL and preparation logic from the historical source notebook `notebooks/bert_original.ipynb`.
+| Table | Required fields |
+|---|---|
+| `articles` | `id`, `content` |
+| `authors` | `id`, `name` |
+| `placeholder` | `article_id`, `author_id` |
 
-**Important:** This historical source notebook is not distributed in the public repository. Therefore, `prepare_data.py` cannot independently reproduce the full preparation workflow from a fresh clone. The separately cleaned post-training evaluation copy, [`notebooks/evaluate_bert.ipynb`](../notebooks/evaluate_bert.ipynb), is published, but it does not replace the historical training notebook.
+The database must already contain the developer's own article records and author relationships. The scripts do not create tables or write to the database. `prepare_data.py` requires `DATABASE_NAME` to be set explicitly; it never defaults to the historical reconstruction schema. Database host and port can be configured with `DIPLOMARBEIT_DB_HOST` and `DIPLOMARBEIT_DB_PORT`. Credentials can be provided through `DIPLOMARBEIT_DB_USER` and `DIPLOMARBEIT_DB_PASSWORD`, or entered interactively. Use a database account restricted to read access for preparation.
 
-The preparation stage also requires an authorized, read-only database connection and the expected database schema.
+For example, in a Bash shell:
 
-## Model Training
+```bash
+export DATABASE_NAME=your_database
+export DIPLOMARBEIT_DB_HOST=127.0.0.1
+export DIPLOMARBEIT_DB_PORT=3306
+export DIPLOMARBEIT_DB_USER=your_read_only_user
+# Prefer a local secret manager or enter the password at the prompt.
+python prepare_data.py --output-dir training_data/run-001
+```
 
-The file [`train.py`](../train.py) preserves the reconstructed BERT training workflow.
+The output path must be a new direct child of `training_data/`. It contains `train.csv`, `test.csv`, `split_manifest.csv`, `label_mapping.json`, and `preparation_summary.json`. These files include article text or row-level identifiers and should remain local; they are excluded from the public code portfolio.
 
-The training implementation is derived from the historical notebook and uses the Hugging Face Transformers and PyTorch ecosystems.
+Preparation applies the original filters: rows for `kein Autor` are excluded, authors with fewer than ten joined article rows are removed, and `LabelEncoder` assigns class IDs. Article IDs are split 80/20 per author with `random_state=42`; the union of author-level test IDs then keeps each multi-author article in only one global partition. IDs are sorted before splitting to avoid process-dependent set iteration. This retains the historical split strategy but can produce a different split from a run that used the notebook's unsorted `list(set(...))` order.
 
-A complete training run requires:
+### Training and saved artifacts
 
-- Prepared article data and author labels.
-- Matching training and evaluation split files.
-- A consistent author-to-class mapping.
-- The excluded historical training notebook containing the required training cells.
-- A compatible local pretrained model and tokenizer.
-- A suitable CPU or GPU environment.
+Training consumes the exact prepared CSVs, mapping, and manifest; it does not independently repartition the data. The output must be a new direct child of `training/`, and an existing path is rejected.
 
-Training generates model artifacts and checkpoints in a designated output directory.
+```bash
+python train.py \
+  --prepared-dir training_data/run-001 \
+  --output-dir training/run-001 \
+  --base-model /path/to/local/bert-base-german-cased \
+  --local-files-only
+```
 
-The script includes explicit execution safeguards and output-path checks to reduce the risk of accidentally overwriting existing training artifacts.
+`--base-model` accepts a local model snapshot or a Transformers model identifier. Without `--local-files-only`, Transformers may retrieve a model when it is not present locally. The default model identifier is `bert-base-german-cased`; the historical pinned revision is used for that default unless `--revision` is supplied. A different model should be paired with its own suitable revision and tokenizer files.
 
-These safeguards do not replace the missing data, notebook, or model resources.
+The run directory contains:
+
+- `checkpoints/`: Trainer checkpoints produced during training.
+- `final_model/`: the selected final model and matching tokenizer files, plus `label_mapping.json`.
+- `label_mapping.json` and `split_manifest.csv`: copies of the exact mapping and split used for the run.
+- `run_manifest.json` and `training_log_history.json`: configuration, input hashes, and Trainer log history.
+
+The trainer output path is checked before creation and is never reused. The model and tokenizer are saved after training completes. Keep the generated data and model artifacts private unless their content and redistribution rights have been reviewed.
+
+### Historical method and implementation differences
+
+The scientific workflow is carried over from the 2025 notebook: German cased BERT sequence classification, 512-token truncation and fixed-length padding, three epochs, learning rate `5e-5`, batch sizes 8, evaluation and checkpointing per epoch, best-model selection by `eval_loss`, 500 warmup steps, linear scheduling, accuracy reporting, and early stopping with patience 2.
+
+Two implementation details are intentionally made more portable: the notebook-cell `exec` dependency is replaced by ordinary functions in the public scripts, and article IDs are sorted before each per-author split. The latter preserves the 80/20 per-author strategy and global multi-author test-ID union but may change exact split membership. Mixed precision is enabled only when CUDA is available; CPU training uses full precision. These changes do not claim to reproduce the historical accuracy values.
+
+PyTorch is not installed by the general requirements file because its correct build depends on the target CPU/CUDA platform. Install a compatible PyTorch build separately. The training scripts also require the listed Transformers, scikit-learn, pandas, SQLAlchemy, and MySQL Connector packages.
 
 ## Dependencies
 
@@ -101,6 +125,8 @@ Key technologies include:
 | Pandas | Dataset preparation |
 | scikit-learn | Dataset splitting and evaluation utilities |
 | SQLAlchemy | Database access |
+
+Use Python 3.10 or newer for the standalone training scripts.
 
 Install the general dependencies using:
 
@@ -154,11 +180,11 @@ Rows represent actual author classes and columns represent predicted classes. Ea
 
 ## Reproducibility
 
-This repository provides the public source files for understanding the reconstructed training workflow. It does not contain everything required to execute it.
+The public scripts contain the data preparation and training logic, but a fresh clone does not include the private inputs required to run them.
 
 The following resources are intentionally excluded:
 
-- Historical source notebooks (`notebooks/bert_original.ipynb`, `notebooks/evaluate.ipynb`, and `notebooks/prepare_csv.ipynb`); the cleaned `notebooks/evaluate_bert.ipynb` copy is included
+- Historical source notebooks (`notebooks/bert_original.ipynb`, `notebooks/evaluate.ipynb`, and `notebooks/prepare_csv.ipynb`); the cleaned `notebooks/evaluate_bert.ipynb` evaluation copy is included
 - Original article datasets and article texts
 - Author-label mappings
 - Training and evaluation split artifacts
@@ -166,9 +192,7 @@ The following resources are intentionally excluded:
 - Fine-tuned model checkpoints
 - Database credentials and local environment files
 
-Consequently, the published `prepare_data.py` and `train.py` scripts are **not standalone training tools**.
-
-A complete reproduction requires separately authorized access to the relevant data and artifacts, together with the expected software environment.
+A complete run requires the developer to provide their own populated database, credentials, a suitable pretrained model/tokenizer, compatible PyTorch build, and sufficient local storage and compute. No historical accuracy result is guaranteed or claimed by the standalone reconstruction.
 
 ## Related Documentation
 

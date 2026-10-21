@@ -231,11 +231,9 @@ See [Airflow Setup](airflow/README.md) for environment variables, Docker setup, 
 
 ### Training Setup
 
-The public `prepare_data.py` and `train.py` files preserve reconstructed workflow logic but are **not standalone training tools**.
+The public `prepare_data.py` and `train.py` scripts contain a standalone reconstruction of the data preparation and training workflow; they do not depend on the excluded historical training notebook. A run still requires a developer-provided MySQL dataset, a compatible pretrained model/tokenizer, and a suitable PyTorch environment.
 
-They depend on historical notebook cells and additional data or model artifacts that are not included in this repository.
-
-See [Training Documentation](docs/TRAINING.md) for the required resources and technical limitations.
+See [Training Documentation](docs/TRAINING.md) for setup, commands, generated artifacts, and the differences from the historical notebook implementation.
 
 ## Reproducibility and Limitations
 
