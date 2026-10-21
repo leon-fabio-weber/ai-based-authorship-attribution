@@ -1,0 +1,5 @@
+apache-airflow==2.10.5
+apache-airflow-providers-mysql
+requests
+beautifulsoup4
+mysql-connector-python

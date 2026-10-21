@@ -1,0 +1,14 @@
+pandas==2.2.3
+numpy==2.2.6
+scikit-learn==1.9.1
+SQLAlchemy==2.1.5
+PyMySQL==1.2.3
+mysql-connector-python==26.7.0
+transformers==4.45.2
+accelerate==0.34.2
+matplotlib==3.11.2
+seaborn==0.13.2
+tqdm==4.70.1
+requests==2.34.2
+beautifulsoup4==4.15.0
+ipykernel==7.4.0

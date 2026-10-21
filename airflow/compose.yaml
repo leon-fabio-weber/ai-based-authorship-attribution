@@ -1,0 +1,39 @@
+name: diplomarbeit-rekonstruktion
+
+services:
+  airflow:
+    build: .
+    command: standalone
+    ports:
+      - "127.0.0.1:${AIRFLOW_WEB_PORT:-8083}:8080"
+    environment:
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      AIRFLOW__CORE__DAG_DISCOVERY_SAFE_MODE: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?Set AIRFLOW_FERNET_KEY in airflow/.env}
+      AIRFLOW_DAILY_DATA_DIR: /opt/airflow/daily_data
+      PYTHONPATH: /opt/airflow/project
+    volumes:
+      - ./dags:/opt/airflow/dags:ro
+      - ./daily_pipeline:/opt/airflow/project/airflow/daily_pipeline:ro
+      - ../models.py:/opt/airflow/project/models.py:ro
+      - daily_data:/opt/airflow/daily_data
+      - airflow_state:/opt/airflow
+    networks:
+      - default
+      - mysql
+    restart: unless-stopped
+
+volumes:
+  airflow_state:
+    name: diplomarbeit_rekonstruktion_airflow_state
+  daily_data:
+    name: diplomarbeit_rekonstruktion_daily_data
+
+networks:
+  mysql:
+    external: true
+    name: ${MYSQL_DOCKER_NETWORK:?Set MYSQL_DOCKER_NETWORK in airflow/.env}

@@ -1,0 +1,30 @@
+# Isolated example for a fresh local MySQL instance. It does not use the
+# existing reconstruction volume or Docker network.
+name: ai-authorship-attribution-mysql-example
+
+services:
+  mysql:
+    image: mysql:8.0.36
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in mysql/.env}
+      MYSQL_DATABASE: diplomarbeit
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --user=root --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      daily:
+        aliases:
+          - mysql
+
+volumes:
+  mysql_data:
+    name: ai-authorship-attribution-mysql-example-data
+
+networks:
+  daily:
+    name: ai-authorship-attribution-daily

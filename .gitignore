@@ -1,0 +1,39 @@
+# Public GitHub v1 allowlist. Ignore every top-level entry, then re-include
+# only the reviewed portfolio files below. Keep local data and runtime files.
+/*
+
+# Reviewed project source and public overview.
+!/.gitignore
+!/README.md
+!/requirements.txt
+!/models.py
+!/import_articles.py
+!/prepare_data.py
+!/train.py
+
+# Airflow source and deployment template.
+!/airflow/
+/airflow/*
+!/airflow/README.md
+!/airflow/Dockerfile
+!/airflow/compose.yaml
+!/airflow/requirements.txt
+!/airflow/.env.example
+!/airflow/dags/
+/airflow/dags/*
+!/airflow/dags/daily_pipeline_dag.py
+!/airflow/daily_pipeline/
+/airflow/daily_pipeline/*
+!/airflow/daily_pipeline/crawler.py
+!/airflow/daily_pipeline/import_articles.py
+
+# Safe MySQL example only; the local compose file is deliberately excluded.
+!/mysql/
+/mysql/*
+!/mysql/README.md
+!/mysql/compose.example.yaml
+
+# Public training setup; internal mapping and reconstruction reports stay local.
+!/docs/
+/docs/*
+!/docs/TRAINING.md
