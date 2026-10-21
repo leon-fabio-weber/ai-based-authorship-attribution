@@ -25,6 +25,59 @@ The implementation covers:
 - **Evaluation:** Examining classification performance and its limitations.
 - **Workflow automation:** Collecting and importing new articles using Apache Airflow.
 
+## System Architecture
+
+The project consists of two related but separate implementations: the original **2025 diploma thesis workflow** for BERT-based authorship attribution and the **2026 Apache Airflow extension** for automated daily article collection.
+
+The diagram below illustrates their conceptual data flows.
+
+```mermaid
+flowchart TD
+    A["DerStandard Monthly Sitemaps"]
+    B["Historical Article Crawler (2025)"]
+    C["Historical CSV Export"]
+    D[("Historical MySQL Database")]
+    E["Dataset Preparation"]
+    F["BERT Fine-Tuning"]
+    G["Authorship Classification"]
+
+    A --> B --> C --> D --> E --> F --> G
+
+    H["Apache Airflow (2026)"]
+    I["Daily Article Crawler"]
+    J["Run-Specific CSV"]
+    K["Daily Article Importer"]
+    L[("Separate MySQL Database")]
+
+    H --> I --> J --> K --> L
+
+    classDef historical fill:#e9f1ff,stroke:#4975bc,color:#17345e
+    classDef extension fill:#e8f6ed,stroke:#418c60,color:#184c30
+
+    class A,B,C,D,E,F,G historical
+    class H,I,J,K,L extension
+```
+
+### Original Diploma Thesis Workflow (2025)
+
+The original workflow begins with monthly DerStandard XML sitemaps. The historical Python crawler discovers article URLs, extracts article text and author information, and exports the collected records to CSV.
+
+The article data is subsequently imported into MySQL and prepared for fine-tuning a BERT-based authorship classification model.
+
+The historical crawler is preserved in [`crawler/DerStandard_crawler.py`](crawler/DerStandard_crawler.py).
+
+### Automated Article Pipeline (2026)
+
+The 2026 extension introduces an Apache Airflow DAG that coordinates date-specific article collection and database ingestion.
+
+It uses a separate crawler implementation, run-specific CSV files, and a dedicated article importer.
+
+The public configuration is designed for a separate MySQL environment. It does not automatically connect to or modify the historical reconstruction database.
+
+For details, see the [Airflow documentation](airflow/README.md) and [MySQL documentation](mysql/README.md).
+
+**Note:** The diagram describes the intended and historical processing relationships. It does not imply that the two implementations currently share a running database or that the entire training workflow is automatically executed by Airflow.
+
 ## Technology Stack
 
 | Technology | Purpose |
@@ -38,72 +91,6 @@ The implementation covers:
 | MySQL | Relational storage of articles and authors |
 | Apache Airflow | Scheduling and pipeline orchestration |
 | Docker & Docker Compose | Containerized infrastructure |
-
-## System Architecture
-
-The project consists of two related workflows: **BERT-based authorship classification** and **automated article ingestion**.
-
-### Authorship Classification
-
-```text
-German News Articles
-        |
-        v
-Data Collection
-        |
-        v
-MySQL Database
-        |
-        v
-Data Filtering & Preparation
-        |
-        v
-Author Label Encoding
-        |
-        v
-BERT Tokenization
-        |
-        v
-BERT Fine-Tuning
-        |
-        v
-Author Classification
-        |
-        v
-Model Evaluation
-```
-
-Article texts and author information form the basis of the training dataset. After filtering and preparation, the texts are tokenized and used to fine-tune a BERT-based sequence classification model.
-
-Each author is represented by a class label. The trained model produces classification scores that can be used to identify the most likely author of an input article.
-
-### Automated Article Pipeline
-
-A separately developed Apache Airflow extension automates the collection and import of new articles.
-
-```text
-Apache Airflow Scheduler
-          |
-          v
-Daily Article Crawler
-          |
-          v
-Run-Specific CSV
-          |
-          v
-Article Importer
-          |
-          v
-MySQL Database
-```
-
-The pipeline discovers articles through the DerStandard monthly sitemap, processes articles associated with a selected Austrian calendar day, and imports new records into MySQL.
-
-The DAG is scheduled daily at **01:00 Europe/Vienna** and processes the preceding calendar day. Historical catchup is disabled.
-
-**This pipeline was developed in 2026 and was not part of the original 2025 diploma thesis implementation.**
-
-For implementation and setup details, see the [Airflow documentation](airflow/README.md).
 
 ## Machine Learning
 
@@ -138,6 +125,12 @@ The exact identity of the historical training and evaluation split could not be 
 A separate evaluation over the full filtered dataset included training examples and is not an independent held-out test.
 
 More information is available in the [training documentation](docs/TRAINING.md).
+
+### Evaluation Visualizations
+
+The saved evaluation plots summarize predictions from a later notebook analysis. That notebook runs inference over the filtered records loaded from the configured database; it does not create a held-out test split. The plots should therefore be read as a descriptive full-dataset reevaluation, not as independent generalization results. See the [evaluation notebook guide](notebooks/README.md) for figure definitions and limitations.
+
+![Accuracy by article count for each author class](docs/figures/accuracy_vs_article_count.png)
 
 ## Dataset
 
@@ -179,8 +172,16 @@ The complete dataset is not included in this repository. Article texts, historic
 │   ├── README.md
 │   └── compose.example.yaml
 │
+├── notebooks/
+│   ├── README.md
+│   └── evaluate_bert.ipynb
+│
 └── docs/
-    └── TRAINING.md
+    ├── TRAINING.md
+    └── figures/
+        ├── accuracy_per_author.png
+        ├── accuracy_vs_article_count.png
+        └── confusion_matrix_normalized.png
 ```
 
 ### Main Components
@@ -243,7 +244,7 @@ This repository is primarily a **code portfolio and technical reference**, not a
 The following resources are intentionally excluded:
 
 - Original article datasets and historical crawl exports
-- Historical Jupyter notebooks
+- Historical source notebooks (`notebooks/bert_original.ipynb`, `notebooks/evaluate.ipynb`, and `notebooks/prepare_csv.ipynb`); the cleaned post-training evaluation copy `notebooks/evaluate_bert.ipynb` is included
 - Author-label mappings and dataset split artifacts
 - Pretrained and fine-tuned model weights
 - Training checkpoints

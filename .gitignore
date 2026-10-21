@@ -43,3 +43,14 @@
 !/docs/
 /docs/*
 !/docs/TRAINING.md
+!/docs/figures/
+/docs/figures/*
+!/docs/figures/accuracy_per_author.png
+!/docs/figures/accuracy_vs_article_count.png
+!/docs/figures/confusion_matrix_normalized.png
+
+# Publish only the cleaned evaluation notebook and its guide.
+!/notebooks/
+/notebooks/*
+!/notebooks/README.md
+!/notebooks/evaluate_bert.ipynb
