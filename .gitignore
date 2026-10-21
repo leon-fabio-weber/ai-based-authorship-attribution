@@ -11,6 +11,12 @@
 !/prepare_data.py
 !/train.py
 
+# Historical crawler source and its documentation only; keep crawl data private.
+!/crawler/
+/crawler/*
+!/crawler/DerStandard_crawler.py
+!/crawler/README.md
+
 # Airflow source and deployment template.
 !/airflow/
 /airflow/*

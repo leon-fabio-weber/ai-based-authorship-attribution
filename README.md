@@ -159,6 +159,10 @@ The complete dataset is not included in this repository. Article texts, historic
 ├── prepare_data.py
 ├── train.py
 │
+├── crawler/
+│   ├── README.md
+│   └── DerStandard_crawler.py
+│
 ├── airflow/
 │   ├── README.md
 │   ├── Dockerfile
@@ -187,6 +191,7 @@ The complete dataset is not included in this repository. Article texts, historic
 | `import_articles.py` | Import workflow for a separately provisioned historical dataset |
 | `prepare_data.py` | Reconstructed data preparation operations |
 | `train.py` | Reconstructed BERT training operations |
+| `crawler/DerStandard_crawler.py` | Historical 2025 crawler reference; see its safety and behavior notes before use |
 | `airflow/` | Automated daily article collection and database ingestion |
 | `mysql/` | Isolated MySQL example configuration and setup documentation |
 | `docs/TRAINING.md` | Training workflow, requirements, and reproducibility limitations |
@@ -262,3 +267,7 @@ The thesis document may be added here following a separate review of publication
 The project uses open-source technologies including PyTorch, Hugging Face Transformers, Apache Airflow, SQLAlchemy, and MySQL.
 
 The underlying news articles originate from **DerStandard**. Their full texts are not redistributed in this repository.
+
+## Historical Crawler
+
+The 2025 crawler source is retained for historical comparison and is separate from the 2026 Airflow crawler. Importing or running it starts live sitemap and article requests, without timeouts, a request delay, or a fixed article limit. Read the [historical crawler documentation](crawler/README.md) before interacting with it. Crawl exports and article text remain excluded from this repository.

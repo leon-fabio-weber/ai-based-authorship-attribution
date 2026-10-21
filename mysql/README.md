@@ -177,3 +177,4 @@ These components must be configured separately if required.
 - [Project Overview](../README.md)
 - [Airflow Pipeline](../airflow/README.md)
 - [Training Documentation](../docs/TRAINING.md)
+- [Historical 2025 crawler](../crawler/README.md)

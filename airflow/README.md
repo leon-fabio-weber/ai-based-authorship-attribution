@@ -265,3 +265,4 @@ The provided infrastructure is intended to demonstrate and support the article c
 - [Project Overview](../README.md)
 - [MySQL Setup](../mysql/README.md)
 - [Training Documentation](../docs/TRAINING.md)
+- [Historical 2025 crawler](../crawler/README.md)
