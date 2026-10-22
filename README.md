@@ -27,17 +27,15 @@ The implementation covers:
 
 ## System Architecture
 
-The project consists of two related but separate implementations: the original **2025 diploma thesis workflow** for BERT-based authorship attribution and the **2026 Apache Airflow extension** for automated daily article collection.
-
-The diagram below illustrates their conceptual data flows.
+The project combines the 2025 authorship-classification workflow with the Apache Airflow article-ingestion extension developed in 2026.
 
 ```mermaid
 flowchart TD
     A["DerStandard Monthly Sitemaps"]
-    B["Historical Article Crawler (2025)"]
-    C["Historical CSV Export"]
-    D[("Historical MySQL Database")]
-    E["Dataset Preparation"]
+    B["Historical Crawler (2025)"]
+    C["Article CSV Export"]
+    D[("MySQL: Articles & Authors")]
+    E["Data Preparation"]
     F["BERT Fine-Tuning"]
     G["Authorship Classification"]
 
@@ -46,37 +44,19 @@ flowchart TD
     H["Apache Airflow (2026)"]
     I["Daily Article Crawler"]
     J["Run-Specific CSV"]
-    K["Daily Article Importer"]
-    L[("Separate MySQL Database")]
+    K["Article Importer"]
 
-    H --> I --> J --> K --> L
+    H --> I --> J --> K --> D
 
     classDef historical fill:#e9f1ff,stroke:#4975bc,color:#17345e
     classDef extension fill:#e8f6ed,stroke:#418c60,color:#184c30
-
     class A,B,C,D,E,F,G historical
-    class H,I,J,K,L extension
+    class H,I,J,K extension
 ```
 
-### Original Diploma Thesis Workflow (2025)
+The shared MySQL node represents the single MySQL instance intended by the local configuration. The current code targets different schema names: the historical importer uses `diplomarbeit_rekonstruktion_full_2025_exact`, while the Airflow importer requires `diplomarbeit`. The diagram therefore represents a shared instance, not one shared logical schema. The Airflow pipeline was developed in 2026 and was not part of the original 2025 diploma thesis.
 
-The original workflow begins with monthly DerStandard XML sitemaps. The historical Python crawler discovers article URLs, extracts article text and author information, and exports the collected records to CSV.
-
-The article data is subsequently imported into MySQL and prepared for fine-tuning a BERT-based authorship classification model.
-
-The historical crawler is preserved in [`crawler/DerStandard_crawler.py`](crawler/DerStandard_crawler.py).
-
-### Automated Article Pipeline (2026)
-
-The 2026 extension introduces an Apache Airflow DAG that coordinates date-specific article collection and database ingestion.
-
-It uses a separate crawler implementation, run-specific CSV files, and a dedicated article importer.
-
-The public configuration is designed for a separate MySQL environment. It does not automatically connect to or modify the historical reconstruction database.
-
-For details, see the [Airflow documentation](airflow/README.md) and [MySQL documentation](mysql/README.md).
-
-**Note:** The diagram describes the intended and historical processing relationships. It does not imply that the two implementations currently share a running database or that the entire training workflow is automatically executed by Airflow.
+For implementation and setup details, see the [Airflow documentation](airflow/README.md) and [MySQL documentation](mysql/README.md).
 
 ## Technology Stack
 
